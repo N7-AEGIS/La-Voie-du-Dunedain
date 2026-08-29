@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Voie Du Dùnedain</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Montserrat:wght@400;600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: #040606;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Cinzel', serif;
+      color: #cfd8d6;
+      overflow: hidden;
+    }
+
+    .app-viewport {
+      width: 100%;
+      max-width: 414px;
+      height: 100vh;
+      max-height: 896px;
+      background: radial-gradient(circle at center top, #142a22 0%, #0c1a15 60%, #060d0a 100%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #1a2824;
+      box-shadow: 0 0 50px rgba(0,0,0,0.9);
+    }
+
+    /* FOND D'ÉCRAN DYNAMIQUE PAR SENTIER */
+    .app-viewport::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+      transition: background-image 0.6s ease-in-out, opacity 0.6s ease-in-out;
+    }
+
+    /* ÉCRAN DE DÉMARRAGE PLEIN ÉCRAN */
+    .splash-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 40px 24px 60px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+      opacity: 1;
+      visibility: visible;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .splash-overlay::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        180deg, 
+        rgba(4, 6, 6, 0.35) 0%, 
+        rgba(4, 6, 6, 0.7) 50%, 
+        rgba(4, 6, 6, 0.95) 100%
+      );
+      z-index: 1;
+    }
+
+    .splash-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .splash-overlay.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-mentor-name {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffd700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 15px rgba(212, 175, 55, 0.5);
+    }
+
+    .splash-quote {
+      font-family: 'Montserrat', sans-serif;
+      font-style: italic;
+      font-size: 13.5px;
+      color: #e2d3b2;
+      line-height: 1.6;
+      margin-bottom: 36px;
+      max-width: 320px;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.95);
+    }
+
+    .splash-prompt {
+      font-size: 10px;
+      font-weight: 700;
+      color: #b5a484;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: rgba(8, 14, 12, 0.6);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(184, 151, 88, 0.3);
+      backdrop-filter: blur(4px);
+      animation: fadeInOut 1.8s infinite ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    #embers-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(12, 26, 21, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 16px 12px 10px 12px;
+      border-bottom: 1px solid rgba(42, 56, 52, 0.6);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 80px 16px;
+      position: relative;
+      z-index: 2;
+    }
+    .scroll-content::-webkit-scrollbar { display: none; }
+
+    .path-view-container {
+      animation: fadeInPath 0.35s ease-out;
+    }
+
+    @keyframes fadeInPath {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .path-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: rgba(9, 18, 15, 0.85);
+      border: 1px solid #2a3834;
+      border-radius: 6px;
+      padding: 3px;
+      margin-bottom: 10px;
+      gap: 2px;
+    }
+    .path-btn {
+      padding: 8px 2px;
+      font-family: 'Cinzel', serif;
+      font-size: 8px;
+      font-weight: 700;
+      color: #6b7c77;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .path-btn.active {
+      background: rgba(28, 40, 36, 0.9);
+      color: #d1c1a5;
+      border: 1px solid #364440;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .path-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #8da49c;
+      text-transform: uppercase;
+      text-align: center;
+      letter-spacing: 1.5px;
+      margin-bottom: 2px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    }
+    .path-subtitle {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #d1c1a5;
+      text-transform: uppercase;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .profile-card {
+      background: linear-gradient(180deg, rgba(17, 27, 24, 0.90) 0%, rgba(10, 17, 15, 0.95) 100%);
+      border: 1px solid #364440;
+      border-radius: 6px;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      margin-bottom: 14px;
+      backdrop-filter: blur(4px);
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .profile-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(212, 175, 55, 0.4);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9), 0 0 12px rgba(212, 175, 55, 0.15);
+    }
+    .profile-card.pulse-xp {
+      animation: goldPulse 0.6s ease-out;
+    }
+
+    @keyframes goldPulse {
+      0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.8); border-color: #d4af37; transform: scale(1); }
+      50% { box-shadow: 0 0 25px 8px rgba(212, 175, 55, 0.5); border-color: #ffd700; transform: scale(1.02); }
+      100% { box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-color: #364440; transform: scale(1); }
+    }
+
+    .rank-badge {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffd700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+      text-align: center;
+    }
+
+    .level-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #d86928;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .xp-container { width: 100%; margin-bottom: 4px; }
+    .xp-label-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #b5a484;
+    }
+    .xp-bar-track {
+      position: relative;
+      width: 100%;
+      height: 20px;
+      background: #060a08;
+      border: 1.5px solid #d4af37;
+      border-radius: 10px;
+      padding: 2px;
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+      overflow: hidden;
+    }
+    .xp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1b7a2b 0%, #46cf3a 60%, #a4f542 100%);
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(164, 245, 66, 0.8);
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+    .xp-bar-fill.flash-gold::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #ffffff;
+      border-radius: 6px;
+      animation: goldFlashAnim 0.5s ease-out forwards;
+    }
+
+    @keyframes goldFlashAnim {
+      0% { opacity: 0.9; background: #fff; }
+      50% { opacity: 0.7; background: #ffe680; }
+      100% { opacity: 0; background: transparent; }
+    }
+
+    .xp-text {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 3px #000;
+    }
+
+    .section-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: #d1c1a5;
+      letter-spacing: 1.5px;
+      text-align: center;
+      margin: 12px 0 8px 0;
+      text-transform: uppercase;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .actions-grid.single-item {
+      grid-template-columns: 1fr;
+    }
+    .actions-grid.three-items {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .action-card {
+      background: linear-gradient(180deg, rgba(28, 38, 35, 0.85) 0%, rgba(17, 26, 23, 0.85) 100%);
+      border: 1.5px solid #3d4a46;
+      border-radius: 4px;
+      padding: 8px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .action-card:hover {
+      transform: translateY(-3px);
+      border-color: #d4af37;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 8px rgba(212, 175, 55, 0.2);
+    }
+    .action-card.selected { border-color: #b89758; background: rgba(37, 51, 46, 0.95); box-shadow: 0 0 10px rgba(184, 151, 88, 0.3); }
+    .action-name { 
+      font-size: 8.5px; 
+      font-weight: 700; 
+      color: #c4d0cd; 
+      line-height: 1.1; 
+      word-break: break-word; 
+      margin-bottom: 4px;
+    }
+    .action-xp { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 700; color: #46cf3a; }
+
+    .btn-validate {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(34, 44, 41, 0.9) 0%, rgba(21, 29, 26, 0.9) 100%);
+      border: 1px solid #364440;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #5d6e69;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: all 0.25s ease;
+    }
+    .btn-validate.active {
+      border-color: #b89758;
+      color: #e2d3b2;
+      background: linear-gradient(180deg, rgba(46, 61, 56, 0.95) 0%, rgba(29, 43, 39, 0.95) 100%);
+      box-shadow: 0 0 12px rgba(184, 151, 88, 0.4);
+    }
+    .btn-validate.active:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 16px rgba(184, 151, 88, 0.6);
+    }
+
+    /* PANNEAU MENTORS */
+    .rewards-panel {
+      background: rgba(14, 22, 19, 0.90);
+      border: 1px solid #2a3834;
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(4px);
+      transition: border-color 0.25s ease;
+    }
+    .rewards-panel:hover {
+      border-color: #364440;
+    }
+    .rewards-title { 
+      font-size: 11px; font-weight: 700; color: #b89758; 
+      margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px;
+      text-align: center;
+    }
+    .quotes-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mentor-quote-container { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      border-top: 1px solid rgba(42, 56, 52, 0.5);
+      padding-top: 8px;
+    }
+    .mentor-quote-container:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+    .mentor-avatar {
+      width: 100px; height: 100px;
+      border-radius: 50%; 
+      object-fit: cover;
+      object-position: top center;
+      border: 1.5px solid #b89758;
+      box-shadow: 0 0 6px rgba(184, 151, 88, 0.3);
+      flex-shrink: 0;
+      transition: transform 0.2s ease-in-out;
+    }
+    .mentor-avatar:hover {
+      transform: scale(1.5);
+      z-index: 10;
+    }
+    .rewards-quote { 
+      font-family: 'Montserrat', sans-serif; font-style: italic; 
+      font-size: 10px; color: #93a39e; line-height: 1.35; 
+    }
+    .mentor-name {
+      font-weight: 700;
+      color: #d1c1a5;
+      font-style: normal;
+    }
+
+    .custom-input-wrapper {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .custom-input-box {
+      flex: 1;
+      background: rgba(10, 18, 15, 0.9);
+      border: 1px solid #2a3834;
+      border-radius: 4px;
+      padding: 10px;
+      color: #cfd8d6;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      user-select: text;
+      transition: border-color 0.2s ease;
+    }
+    .custom-input-box:focus { outline: none; border-color: #b89758; }
+    .btn-add-custom {
+      background: rgba(23, 36, 32, 0.9);
+      border: 1px solid #3d4a46;
+      border-radius: 4px;
+      padding: 0 14px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      font-weight: 700;
+      color: #b89758;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-add-custom:hover {
+      background: rgba(37, 51, 46, 0.95);
+      border-color: #b89758;
+      box-shadow: 0 0 10px rgba(184, 151, 88, 0.2);
+    }
+
+    .checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .check-item {
+      background: rgba(17, 26, 23, 0.85);
+      border: 1px solid #2a3834;
+      border-radius: 4px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      color: #c4d0cd;
+      transition: all 0.2s ease;
+    }
+    .check-item:hover { 
+      border-color: #d4af37; 
+      transform: translateX(3px);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .check-item.checked {
+      border-color: #b89758;
+      background: rgba(23, 36, 32, 0.9);
+      color: #e2d3b2;
+    }
+    .check-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    .check-box {
+      width: 16px; height: 16px;
+      border: 1px solid #5d6e69;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .check-item.checked .check-box {
+      background: #b89758;
+      border-color: #b89758;
+      color: #060a08;
+    }
+    .btn-delete-item {
+      background: none; border: none; color: #5d6e69; cursor: pointer; font-size: 12px;
+      transition: color 0.2s; padding: 2px 4px;
+    }
+    .btn-delete-item:hover { color: #d86928; }
+
+    .medals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .medal-card {
+      background: rgba(17, 26, 23, 0.85);
+      border: 1px solid #2a3834;
+      border-radius: 4px;
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: all 0.25s ease;
+    }
+    .medal-card:hover {
+      transform: translateY(-2px);
+      border-color: #5d6e69;
+    }
+    .medal-icon { font-size: 24px; margin-bottom: 4px; filter: grayscale(1); opacity: 0.5; transition: all 0.3s ease; }
+    .medal-card.unlocked .medal-icon { filter: none; opacity: 1; }
+    .medal-name { font-size: 9px; font-weight: 700; color: #8da49c; }
+
+    .journal-box {
+      width: 100%;
+      height: 70px;
+      background: rgba(10, 18, 15, 0.9);
+      border: 1px solid #2a3834;
+      border-radius: 4px;
+      padding: 8px;
+      color: #cfd8d6;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      resize: none;
+      margin-bottom: 8px;
+      user-select: text;
+      transition: border-color 0.2s ease;
+    }
+    .journal-box:focus { outline: none; border-color: #b89758; }
+
+    .btn-save-note {
+      width: 100%;
+      background: rgba(23, 36, 32, 0.9);
+      border: 1px solid #3d4a46;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      font-weight: 700;
+      color: #b89758;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+    .btn-save-note:hover {
+      background: rgba(37, 51, 46, 0.95);
+      border-color: #b89758;
+      box-shadow: 0 0 10px rgba(184, 151, 88, 0.2);
+    }
+
+    .archive-toggle-btn {
+      width: 100%;
+      background: rgba(12, 21, 18, 0.9);
+      border: 1px solid #1f2c28;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: 'Cinzel', serif;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #8da49c;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      transition: all 0.2s ease;
+    }
+    .archive-toggle-btn:hover {
+      border-color: #364440;
+      color: #d1c1a5;
+    }
+
+    .notes-archive-content {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .notes-archive-content.open { display: flex; }
+    .notes-archive-content::-webkit-scrollbar { width: 4px; }
+    .notes-archive-content::-webkit-scrollbar-thumb {
+      background: #2a3834;
+      border-radius: 2px;
+    }
+
+    .note-archive-item {
+      background: rgba(8, 14, 12, 0.9);
+      border: 1px solid #192622;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: 'Montserrat', sans-serif;
+      position: relative;
+      transition: border-color 0.2s ease;
+    }
+    .note-archive-item:hover { border-color: #2a3834; }
+    .note-date { font-size: 9px; color: #b89758; font-weight: 600; margin-bottom: 4px; }
+    .note-text {
+      font-size: 10.5px;
+      color: #a4b3ae;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      user-select: text;
+    }
+    .btn-delete-note {
+      position: absolute; top: 6px; right: 8px;
+      background: none; border: none; color: #5d6e69; cursor: pointer; font-size: 11px;
+      transition: color 0.2s;
+    }
+    .btn-delete-note:hover { color: #d86928; }
+
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(4, 6, 6, 0.85);
+      backdrop-filter: blur(6px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .levelup-card {
+      background: linear-gradient(180deg, #182b23 0%, #0c1813 100%);
+      border: 2px solid #ffd700;
+      border-radius: 8px;
+      padding: 24px 20px;
+      width: 85%;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+      transform: scale(0.8);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .modal-overlay.active .levelup-card {
+      transform: scale(1);
+    }
+    .levelup-icon {
+      font-size: 42px;
+      margin-bottom: 8px;
+      animation: bounce 1s infinite alternate;
+    }
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-8px); }
+    }
+    .levelup-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #ffd700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .levelup-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      color: #c4d0cd;
+      margin-bottom: 18px;
+    }
+    .btn-levelup-close {
+      background: linear-gradient(180deg, #d4af37 0%, #a38222 100%);
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #060d0a;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: transform 0.2s ease;
+    }
+    .btn-levelup-close:hover {
+      transform: scale(1.05);
+    }
+
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      cursor: pointer; color: #4c5c57; font-family: 'Montserrat', sans-serif;
+      font-size: 9px; font-weight: 600; flex: 1; text-align: center;
+      transition: color 0.2s ease;
+    }
+    .nav-item:hover, .nav-item.active { color: #d8aa53; }
+  </style>
+</head>
+<body>
+
+  <div class="app-viewport" id="app-viewport">
+    
+    <!-- ÉCRAN DE DÉMARRAGE PLEIN ÉCRAN -->
+    <div class="splash-overlay" id="splash-screen" onclick="dismissSplash()">
+      <div class="splash-content">
+        <div id="splash-name" class="splash-mentor-name"></div>
+        <div id="splash-quote" class="splash-quote"></div>
+        <div class="splash-prompt">Toucher l'écran pour entrer</div>
+      </div>
+    </div>
+
+    <canvas id="embers-canvas"></canvas>
+
+    <div class="sticky-header">
+      <div class="path-selector">
+        <button class="path-btn" id="btn-ranger" onclick="switchPath('ranger', event)">Ranger</button>
+        <button class="path-btn" id="btn-samurai" onclick="switchPath('samurai', event)">Samouraï</button>
+        <button class="path-btn" id="btn-juste" onclick="switchPath('juste', event)">Juste</button>
+        <button class="path-btn" id="btn-fondateur" onclick="switchPath('fondateur', event)">Fondateur</button>
+      </div>
+
+      <div class="path-title" id="path-title">Le Sentier du Ranger</div>
+      <div class="path-subtitle" id="path-subtitle"></div>
+    </div>
+
+    <div class="scroll-content">
+      <div class="path-view-container" id="path-view-container">
+
+        <!-- BLOC PROFIL ET BARRE XP -->
+        <div class="profile-card" id="profile-card">
+          <div class="rank-badge" id="rank-badge">Débutant des Bois</div>
+          <div class="level-title" id="level-title">Niveau 1</div>
+
+          <div class="xp-container">
+            <div class="xp-label-row">
+              <span>⛺</span>
+              <span>EXPÉRIENCE CUMULÉE</span>
+              <span>🏰</span>
+            </div>
+            <div class="xp-bar-track">
+              <div class="xp-bar-fill" id="xp-fill"></div>
+              <div class="xp-text" id="xp-text">0 / 100 XP</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIONS ET BOUTON DE VALIDATION EN HAUT -->
+        <div class="section-header">Actions du Jour</div>
+        <div class="actions-grid" id="actions-container"></div>
+        <button class="btn-validate" id="btn-validate" onclick="validateXP()">Valider l'Entraînement</button>
+
+        <!-- PAROLES DES MENTORS -->
+        <div class="rewards-panel">
+          <div class="rewards-title">Paroles du Mentor</div>
+          <div class="quotes-container" id="path-quotes-container"></div>
+        </div>
+
+        <!-- CONTENU DYNAMIQUE SPÉCIFIQUE EN BAS -->
+        <div id="dynamic-mechanic"></div>
+
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="levelup-modal">
+      <div class="levelup-card">
+        <div class="levelup-icon">⚔️</div>
+        <div class="levelup-title">Niveau Supérieur !</div>
+        <div class="levelup-sub" id="levelup-sub-text">Vous avez atteint un nouveau palier de maîtrise. Continuez ainsi sur votre voie !</div>
+        <button class="btn-levelup-close" onclick="closeLevelUpModal()">Poursuivre la Quête</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // SYNTHÉTISEUR D'EFFETS SONORES
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playWindSound() {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const now = audioCtx.currentTime;
+      const duration = 0.8;
+
+      const bufferSize = audioCtx.sampleRate * duration;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = buffer;
+
+      const lowpassFilter = audioCtx.createBiquadFilter();
+      lowpassFilter.type = 'lowpass';
+      lowpassFilter.frequency.setValueAtTime(200, now);
+      lowpassFilter.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+      lowpassFilter.frequency.exponentialRampToValueAtTime(150, now + duration);
+
+      const windGain = audioCtx.createGain();
+      windGain.gain.setValueAtTime(0.01, now);
+      windGain.gain.linearRampToValueAtTime(0.35, now + 0.25);
+      windGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      whiteNoise.connect(lowpassFilter);
+      lowpassFilter.connect(windGain);
+      windGain.connect(audioCtx.destination);
+
+      whiteNoise.start(now);
+      whiteNoise.stop(now + duration);
+    }
+
+    function triggerHaptic(type = 'light') {
+      if ('vibrate' in navigator) {
+        if (type === 'light') navigator.vibrate(15);
+        else if (type === 'medium') navigator.vibrate(35);
+        else if (type === 'success') navigator.vibrate([20, 50, 40]);
+      }
+    }
+
+    // BASE DE DONNÉES DES MENTORS
+    const mentorsData = {
+      Kassandra: {
+        avatar: "https://i.pinimg.com/736x/0f/5f/4f/0f5f4fa397ac6233a048644390184c42.jpg",
+        quotes: [
+          "« N'attends pas que le destin te trace la voie, forge-le à chaque pas. »",
+          "« Un guerrier n'attend pas la tempête idéale, il apprend à se battre sous la pluie. »"
+        ]
+      },
+      Aragorn: {
+        avatar: "https://i.pinimg.com/1200x/15/58/be/1558bedcd9ae08eba080d8d50e07f22d.jpg",
+        quotes: [
+          "« La persévérance est la vraie force du Rôdeur. Que faisons-nous du temps qui nous est imparti ? »",
+          "« Un jour viendra où le courage des hommes faillira... mais ce jour n'est pas arrivé ! »"
+        ]
+      },
+      "Geralt de Riv": {
+        avatar: "https://i.pinimg.com/1200x/0a/54/aa/0a54aace45a9477632b41f9fa8e118f7.jpg",
+        quotes: [
+          "« Si je dois choisir entre un mal et un autre, je préfère ne pas choisir du tout. »",
+          "« La préparation et la connaissance du terrain font la différence entre un survivant et un cadavre. »",
+          "« Il n'y a pas de raccourci vers la maîtrise : l'entraînement quotidien est la seule constante. »"
+        ]
+      },
+      Sanada: {
+        avatar: "https://i.pinimg.com/1200x/e1/b8/3c/e1b83c30541c7580c3c8bf3dc9942cf8.jpg",
+        quotes: [
+          "« L'esprit doit rester immobile comme un lac, même au milieu de la tempête. »",
+          "« L'honneur ne s'achète pas, il se façonne dans chaque geste quotidien. »"
+        ]
+      },
+      Katsumoto: {
+        avatar: "https://i.pinimg.com/736x/6f/b2/1e/6fb21e127b145f7a0b6d55ef1ca38734.jpg",
+        quotes: [
+          "« La vraie victoire n'est pas de vaincre l'ennemi, mais de se dompter soi-même. »",
+          "« Recherche la perfection dans chaque souffle, même sans espérer l'atteindre. »"
+        ]
+      },
+      Gibbs: {
+        avatar: "https://i.pinimg.com/736x/83/72/40/83724015d60c9cb8b8e4da18acfba919.jpg",
+        quotes: [
+          "« Applique le code avec rigueur. La discipline est ton seul vrai cap. »",
+          "« Quand le vent tourne, ce ne sont pas les voiles qui faiblissent, mais l'équipage. »"
+        ]
+      },
+      "Kate Beckett": {
+        avatar: "https://i.pinimg.com/1200x/06/ed/a1/06eda1693037aa7a5761f297fb0330b5.jpg",
+        quotes: [
+          "« La vérité ne s'obtient qu'à force de méthode et de persévérance sans faille. »",
+          "« Ne laisse jamais les détails t'échapper : la rigueur est la clef. »"
+        ]
+      },
+      "Pale Rider": {
+        avatar: "https://i.pinimg.com/1200x/cb/26/35/cb26358668bec886d3eafc7c70de7ed0.jpg",
+        quotes: [
+          "« La justice n'est pas un discours, c'est une ligne droite que l'on ne dévie jamais. »",
+          "« L'enfer suit toujours ceux qui trahissent leur propre conscience. »",
+          "« Reste calme, vise juste et ne plie jamais devant l'injustice. »"
+        ]
+      },
+      "Alexandre Astier": {
+        avatar: "https://i.pinimg.com/1200x/9d/4f/c3/9d4fc3a14d11b746a354bd9726759005.jpg",
+        quotes: [
+          "« La passion, c'est ce qui fait qu'on se lève le matin pour bosser sur un projet dont tout le monde se fout jusqu'à ce que ça devienne incontournable. »",
+          "« Ce n'est pas parce qu'on sait faire un truc qu'il faut le bâcler. L'exigence, c'est le respect qu'on a pour son propre travail. »",
+          "« Il faut être rigoureux dans l'exécution, mais totalement libre dans l'invention. »"
+        ]
+      },
+      "Mike Horn": {
+        avatar: "https://i.pinimg.com/736x/d4/b4/a3/d4b4a3b0d5eb9e8706177ed27cbef4ce.jpg",
+        quotes: [
+          "« Pour vivre une vie extraordinaire, il faut faire des choses extraordinaires. La peur est juste une barrière mentale. »",
+          "« L'impossible n'existe que dans l'esprit de ceux qui n'ont jamais essayé de repousser leurs limites. »",
+          "« Quand tu es au bout de tes forces, c'est là que tout commence vraiment. N'abandonne jamais. »"
+        ]
+      },
+      "Patrick Jane": {
+        avatar: "https://i.pinimg.com/1200x/fa/0b/74/fa0b74766f1276b6c1c95ad14a6ca5d8.jpg",
+        quotes: [
+          "« Tout le monde ment, mais les détails révèlent toujours la vérité à qui sait observer. »",
+          "« Le secret d'un grand projet repose sur l'art d'anticiper les réactions avant même qu'elles n'adviennent. »",
+          "« Garde toujours un temps d'avance et garde le sourire, même face à l'imprévu. »"
+        ]
+      }
+    };
+
+    function initSplashScreen() {
+      const keys = Object.keys(mentorsData);
+      const randomKey = keys[Math.floor(Math.random() * keys.length)];
+      const mentor = mentorsData[randomKey];
+      const randomQuote = mentor.quotes[Math.floor(Math.random() * mentor.quotes.length)];
+
+      const splashScreen = document.getElementById('splash-screen');
+      splashScreen.style.backgroundImage = `url('${mentor.avatar}')`;
+      document.getElementById('splash-name').innerText = randomKey;
+      document.getElementById('splash-quote').innerText = randomQuote;
+    }
+
+    function dismissSplash() {
+      const splash = document.getElementById('splash-screen');
+      if (splash && !splash.classList.contains('fade-out')) {
+        const docElm = document.documentElement;
+        if (docElm.requestFullscreen) {
+          docElm.requestFullscreen().catch(() => {});
+        } else if (docElm.webkitRequestFullscreen) {
+          docElm.webkitRequestFullscreen().catch(() => {});
+        } else if (docElm.msRequestFullscreen) {
+          docElm.msRequestFullscreen().catch(() => {});
+        }
+
+        splash.classList.add('fade-out');
+        triggerHaptic('medium');
+        playWindSound();
+      }
+    }
+
+    // CANVAS BRAISES FLOTTANTES
+    const canvas = document.getElementById('embers-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const embers = [];
+    const emberCount = 28;
+
+    class Ember {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height + Math.random() * 20;
+        this.size = Math.random() * 2 + 0.8;
+        this.speedY = Math.random() * 0.7 + 0.3;
+        this.speedX = (Math.random() - 0.5) * 0.4;
+        this.opacity = Math.random() * 0.7 + 0.3;
+        this.fadeSpeed = Math.random() * 0.005 + 0.002;
+        const colors = ['212, 175, 55', '216, 105, 40', '255, 180, 80'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+      }
+      update() {
+        this.y -= this.speedY;
+        this.x += this.speedX + Math.sin(this.y * 0.02) * 0.2;
+        this.opacity -= this.fadeSpeed;
+        if (this.opacity <= 0 || this.y < -10) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = `rgba(${this.color}, 0.8)`;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    for (let i = 0; i < emberCount; i++) {
+      const ember = new Ember();
+      ember.y = Math.random() * canvas.height;
+      embers.push(ember);
+    }
+
+    function animateEmbers() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      embers.forEach(ember => {
+        ember.update();
+        ember.draw();
+      });
+      requestAnimationFrame(animateEmbers);
+    }
+    animateEmbers();
+
+    const pathsData = {
+      ranger: {
+        title: "Le Sentier du Ranger",
+        subtitle: "Force, Endurance & Agilité ",
+        bgImage: "https://i.pinimg.com/736x/34/9d/d8/349dd83c82da95cb3715399802440caf.jpg",
+        mentorKeys: ["Kassandra", "Aragorn", "Geralt de Riv"],
+        ranks: [
+          "Initié", "Pisteur Végétal", "Éclaireur des Cimes", 
+          "Gardien du Sauvage", "Archer Silencieux", "Traqueur de l'Ombre", 
+          "Maître Rôdeur", "Arpenteur des Brumes", "Esprit des Forêts", 
+          "Seigneur Rôdeur", "Légende de la Canopée"
+        ],
+        actions: [
+          { name: "ROUTINE", xp: 15 },
+          { name: "ARMES TRADITIONNELLES", xp: 30 },
+          { name: "RENFORCEMENT", xp: 50 }
+        ],
+        type: "ranger_mechanic",
+        storageKeyNotes: "sentier_ranger_notes",
+        medals: [
+          { name: "LA GRANDE TRAVERSÉE DES ALPES", unlocked: true, icon: "⛰️" },
+        ]
+      },
+      samurai: {
+        title: "Le Sentier du Samouraï",
+        subtitle: "Discipline, Voie du Sabre & Maîtrise de Soi",
+        bgImage: "https://i.pinimg.com/736x/88/26/69/882669d2ebb308d8303ad9ad8549d90f.jpg",
+        mentorKeys: ["Sanada", "Katsumoto"],
+        ranks: [
+          "Initié", "Serviteur Shugyo", "Guerrier Bushi", 
+          "Sabre d'Acier", "Lame de Jade", "Maître du Kenjutsu", 
+          "Gardien du Bushido", "Ombre du Shogun", "Esprit du Katana", 
+          "Champion Impérial", "Kensei (Saint du Sabre)"
+        ],
+        actions: [
+          { name: "HARMONIE & LECTURE", xp: 10 },
+          { name: "MÉDITATION & KATANA", xp: 40 }
+        ],
+        type: "checklist",
+        storageKey: "sentier_samurai_vertus",
+        itemsTitle: "Les 7 Vertus du Bushido à valider",
+        items: ["Gi (Justice)", "Rei (Respect)", "Yu (Courage)", "Meiyo (Honneur)", "Jin (Bienveillance)", "Makoto (Sincérité)", "Chu (Loyauté)"]
+      },
+      juste: {
+        title: "Le Sentier du Juste",
+        subtitle: "Rigueur, Analyse & Recherche de la Vérité",
+        bgImage: "https://i.pinimg.com/736x/18/b5/c6/18b5c6d40ff9d52094e15c1a6b083916.jpg",
+        mentorKeys: ["Gibbs", "Kate Beckett", "Pale Rider"],
+        ranks: [
+          "Initié", "Enquêteur Novice", "Analyste des Faits", 
+          "Magistrat Révélé", "Gardien du Code", "Inquisiteur Révélateur", 
+          "Juge de la Rigueur", "Protecteur de Vérité", "Grand Prévôt", 
+          "Archange de la Justice", "Balance Incorruptible"
+        ],
+        actions: [
+          { name: "DISCIPLINE", xp: 20 },
+          { name: "ARMES MODERNES", xp: 100 }
+        ],
+        type: "juste_mechanic",
+        storageKeyNotes: "sentier_juste_notes",
+        medals: [
+          { name: "10 ANS D'ARMÉE", unlocked: true, icon: "🎖️" },
+        ]
+      },
+      fondateur: {
+        title: "Le Sentier du Fondateur",
+        subtitle: "Vision, Création & Dépassement de Soi",
+        bgImage: "https://i.pinimg.com/736x/8a/f2/06/8af206b183d6f10d28b707fe20c6bd86.jpg",
+        mentorKeys: ["Alexandre Astier", "Mike Horn", "Patrick Jane"],
+        ranks: [
+          "Initié", "Bâtisseur d'Idées", "Concepteur Révélé", 
+          "Architecte de Projet", "Pionnier Audacieux", "Capitaine d'Entreprise", 
+          "Maître Bâtisseur", "Stratège Incorruptible", "Créateur de Domaine", 
+          "Bâtisseur d'Empire", "Fondateur Légendaire"
+        ],
+        actions: [
+          { name: "MAINTENIR LE LIEN", xp: 20 },
+          { name: "CONNAISSANCES EN SURVIE", xp: 30 },
+          { name: "CONCRÉTISER", xp: 50 },
+          { name: "ACCOMPLIR", xp: 100 }
+        ],
+        type: "custom_list",
+        storageKey: "sentier_fondateur_projects",
+        placeholder: "Ajouter",
+        itemsTitle: "Mes Projets Terminés"
+      }
+    };
+
+    const selectedMentorsByPath = {};
+    Object.keys(pathsData).forEach(pathKey => {
+      const keys = pathsData[pathKey].mentorKeys;
+      selectedMentorsByPath[pathKey] = keys[Math.floor(Math.random() * keys.length)];
+    });
+
+    const XP_PER_LEVEL = 100;
+
+    let currentPath = localStorage.getItem('sentier_actif') || 'ranger';
+
+    function getPathXP(pathKey) {
+      return parseInt(localStorage.getItem(`sentier_xp_${pathKey}`)) || 0;
+    }
+
+    function setPathXP(pathKey, amount) {
+      localStorage.setItem(`sentier_xp_${pathKey}`, amount);
+    }
+
+    function getCustomItems(storageKey) {
+      return JSON.parse(localStorage.getItem(storageKey)) || [];
+    }
+
+    function saveCustomItems(storageKey, items) {
+      localStorage.setItem(storageKey, JSON.stringify(items));
+    }
+
+    function getNotes(storageKey) {
+      return JSON.parse(localStorage.getItem(storageKey)) || [];
+    }
+
+    function saveNotes(storageKey, notes) {
+      localStorage.setItem(storageKey, JSON.stringify(notes));
+    }
+
+    function getLevelData(totalXP, pathKey) {
+      const currentLevel = Math.floor(totalXP / XP_PER_LEVEL) + 1;
+      const previousLevelXP = (currentLevel - 1) * XP_PER_LEVEL;
+      const nextLevelXP = currentLevel * XP_PER_LEVEL;
+      const levelProgressXP = totalXP - previousLevelXP;
+      const progressPercent = (levelProgressXP / XP_PER_LEVEL) * 100;
+
+      const rankIndex = Math.min(Math.floor((currentLevel - 1) / 10), 10);
+      const currentRankTitle = pathsData[pathKey].ranks[rankIndex];
+
+      return {
+        level: currentLevel,
+        rankIndex: rankIndex,
+        rankTitle: currentRankTitle,
+        nextLevelXP: nextLevelXP,
+        progressPercent: Math.min(Math.max(progressPercent, 0), 100)
+      };
+    }
+
+    let selectedXp = 0;
+    let isArchiveOpen = false;
+
+    function switchPath(pathKey, evt) {
+      if (currentPath === pathKey) return;
+      triggerHaptic('light');
+      playWindSound();
+      currentPath = pathKey;
+      localStorage.setItem('sentier_actif', pathKey);
+      selectedXp = 0;
+      
+      const viewContainer = document.getElementById('path-view-container');
+      viewContainer.style.animation = 'none';
+      void viewContainer.offsetWidth;
+      viewContainer.style.animation = 'fadeInPath 0.35s ease-out';
+
+      renderApp();
+    }
+
+    function renderApp() {
+      const data = pathsData[currentPath];
+      const activeMentorKey = selectedMentorsByPath[currentPath];
+
+      const viewport = document.getElementById('app-viewport');
+      viewport.style.setProperty('--bg-image', `url('${data.bgImage}')`);
+      
+      const styleSheet = document.getElementById('dynamic-bg-style') || document.createElement('style');
+      styleSheet.id = 'dynamic-bg-style';
+      styleSheet.innerHTML = `.app-viewport::before { background-image: url('${data.bgImage}'); }`;
+      document.head.appendChild(styleSheet);
+
+      document.querySelectorAll('.path-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-${currentPath}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      document.getElementById('path-title').innerText = data.title;
+      document.getElementById('path-subtitle').innerText = data.subtitle;
+
+      updateXpUI();
+
+      const actionsContainer = document.getElementById('actions-container');
+      actionsContainer.innerHTML = '';
+      actionsContainer.className = 'actions-grid';
+
+      if (data.actions.length === 1) {
+        actionsContainer.classList.add('single-item');
+      } else if (data.actions.length === 3) {
+        actionsContainer.classList.add('three-items');
+      }
+
+      data.actions.forEach(act => {
+        const card = document.createElement('div');
+        card.className = 'action-card';
+        card.onclick = () => selectAction(card, act.xp);
+        card.innerHTML = `
+          <div class="action-name">${act.name}</div>
+          <div class="action-xp">+${act.xp} XP</div>
+        `;
+        actionsContainer.appendChild(card);
+      });
+
+      renderSingleMentorQuote(activeMentorKey);
+
+      const mechanicContainer = document.getElementById('dynamic-mechanic');
+      mechanicContainer.innerHTML = '';
+
+      if (data.type === 'custom_list') {
+        const customItems = getCustomItems(data.storageKey);
+        let html = `
+          <div class="section-header">${data.itemsTitle}</div>
+          <div class="custom-input-wrapper">
+            <input type="text" class="custom-input-box" id="custom-item-input" placeholder="${data.placeholder}" onkeydown="handleCustomKey(event, '${data.storageKey}')">
+            <button class="btn-add-custom" onclick="addCustomItem('${data.storageKey}')">Créer</button>
+          </div>
+          <div class="checklist" id="custom-items-list">
+        `;
+
+        if (customItems.length === 0) {
+          html += `<div style="font-size:10px; color:#6b7c77; text-align:center; padding:12px;">Aucun élément enregistré. Crée ton premier élément ci-dessus !</div>`;
+        } else {
+          customItems.forEach((item, idx) => {
+            html += `
+              <div class="check-item ${item.checked ? 'checked' : ''}">
+                <div class="check-left" onclick="toggleCustomItem('${data.storageKey}', ${idx})">
+                  <div class="check-box">✓</div>
+                  <span>${escapeHtml(item.name)}</span>
+                </div>
+                <button class="btn-delete-item" onclick="deleteCustomItem('${data.storageKey}', ${idx})" title="Supprimer">✕</button>
+              </div>
+            `;
+          });
+        }
+        html += `</div>`;
+        mechanicContainer.innerHTML = html;
+
+      } else if (data.type === 'checklist') {
+        const savedVertus = getCustomItems(data.storageKey);
+        let currentVertus = savedVertus;
+
+        if (savedVertus.length === 0) {
+          currentVertus = data.items.map(title => ({ name: title, checked: false }));
+          saveCustomItems(data.storageKey, currentVertus);
+        }
+
+        let html = `<div class="section-header">${data.itemsTitle}</div><div class="checklist">`;
+        currentVertus.forEach((item, idx) => {
+          html += `
+            <div class="check-item ${item.checked ? 'checked' : ''}" onclick="toggleCustomItem('${data.storageKey}', ${idx})">
+              <div class="check-left">
+                <div class="check-box">✓</div>
+                <span>${escapeHtml(item.name)}</span>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+        mechanicContainer.innerHTML = html;
+
+      } else if (data.type === 'medals_only') {
+        let html = `<div class="section-header">Médailles d'Accomplissement</div><div class="medals-grid">`;
+        data.medals.forEach(m => {
+          html += `
+            <div class="medal-card ${m.unlocked ? 'unlocked' : ''}">
+              <div class="medal-icon">${m.icon}</div>
+              <div class="medal-name">${m.name}</div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+        mechanicContainer.innerHTML = html;
+
+      } else if (data.type === 'juste_mechanic' || data.type === 'ranger_mechanic') {
+        const savedNotes = getNotes(data.storageKeyNotes);
+        let html = `<div class="section-header">Médailles d'Accomplissement</div><div class="medals-grid">`;
+        data.medals.forEach(m => {
+          html += `
+            <div class="medal-card ${m.unlocked ? 'unlocked' : ''}">
+              <div class="medal-icon">${m.icon}</div>
+              <div class="medal-name">${m.name}</div>
+            </div>
+          `;
+        });
+        html += `</div>
+          <div class="section-header">Notes de Séance</div>
+          <textarea class="journal-box" id="journal-input" placeholder="Consigne tes observations et faits du jour..."></textarea>
+          <button class="btn-save-note" onclick="saveNote('${data.storageKeyNotes}')">Enregistrer l'Observation</button>
+          
+          <button class="archive-toggle-btn" onclick="toggleArchive()">
+            <span>Archives des Notes (${savedNotes.length})</span>
+            <span id="archive-arrow">${isArchiveOpen ? '▲' : '▼'}</span>
+          </button>
+          <div class="notes-archive-content ${isArchiveOpen ? 'open' : ''}" id="notes-archive"></div>
+        `;
+        mechanicContainer.innerHTML = html;
+        renderArchiveNotes(data.storageKeyNotes);
+      }
+    }
+
+    function handleCustomKey(evt, storageKey) {
+      if (evt.key === 'Enter') {
+        addCustomItem(storageKey);
+      }
+    }
+
+    function addCustomItem(storageKey) {
+      const input = document.getElementById('custom-item-input');
+      if (!input || !input.value.trim()) return;
+
+      triggerHaptic('medium');
+      const items = getCustomItems(storageKey);
+      items.push({
+        name: input.value.trim(),
+        checked: false
+      });
+      saveCustomItems(storageKey, items);
+      input.value = '';
+      renderApp();
+    }
+
+    function toggleCustomItem(storageKey, index) {
+      triggerHaptic('light');
+      const items = getCustomItems(storageKey);
+      items[index].checked = !items[index].checked;
+      saveCustomItems(storageKey, items);
+      renderApp();
+    }
+
+    function deleteCustomItem(storageKey, index) {
+      triggerHaptic('light');
+      const items = getCustomItems(storageKey);
+      items.splice(index, 1);
+      saveCustomItems(storageKey, items);
+      renderApp();
+    }
+
+    function renderSingleMentorQuote(mentorKey) {
+      const container = document.getElementById('path-quotes-container');
+      container.innerHTML = '';
+      
+      const mentor = mentorsData[mentorKey];
+      if (mentor) {
+        const randomQuote = mentor.quotes[Math.floor(Math.random() * mentor.quotes.length)];
+        const quoteEl = document.createElement('div');
+        quoteEl.className = 'mentor-quote-container';
+        quoteEl.innerHTML = `
+          <img class="mentor-avatar" src="${mentor.avatar}" alt="${mentorKey}">
+          <div class="rewards-quote"><span class="mentor-name">${mentorKey} :</span> ${randomQuote}</div>
+        `;
+        container.appendChild(quoteEl);
+      }
+    }
+
+    function toggleCheck(el) {
+      triggerHaptic('light');
+      el.classList.toggle('checked');
+    }
+
+    function selectAction(card, xp) {
+      triggerHaptic('medium');
+      const isSelected = card.classList.contains('selected');
+      document.querySelectorAll('.action-card').forEach(c => c.classList.remove('selected'));
+      
+      const btnValidate = document.getElementById('btn-validate');
+      if (!isSelected) {
+        card.classList.add('selected');
+        selectedXp = xp;
+        btnValidate.classList.add('active');
+        btnValidate.innerText = `Valider l'Entraînement (+${xp} XP)`;
+      } else {
+        selectedXp = 0;
+        btnValidate.classList.remove('active');
+        btnValidate.innerText = `Valider l'Entraînement`;
+      }
+    }
+
+    function validateXP() {
+      if (selectedXp <= 0) return;
+
+      const currentPathXP = getPathXP(currentPath);
+      const oldLevelData = getLevelData(currentPathXP, currentPath);
+
+      const newPathXP = currentPathXP + selectedXp;
+      setPathXP(currentPath, newPathXP);
+      selectedXp = 0;
+
+      const newLevelData = getLevelData(newPathXP, currentPath);
+
+      playWindSound();
+      triggerHaptic('success');
+
+      updateXpUI(true);
+
+      document.querySelectorAll('.action-card').forEach(c => c.classList.remove('selected'));
+      const btnValidate = document.getElementById('btn-validate');
+      btnValidate.classList.remove('active');
+      btnValidate.innerText = `Valider l'Entraînement`;
+
+      if (newLevelData.level > oldLevelData.level) {
+        setTimeout(() => {
+          showLevelUpModal(newLevelData);
+        }, 400);
+      }
+    }
+
+    function updateXpUI(flash = false) {
+      const currentPathXP = getPathXP(currentPath);
+      const levelData = getLevelData(currentPathXP, currentPath);
+
+      document.getElementById('rank-badge').innerText = levelData.rankTitle;
+      document.getElementById('level-title').innerText = `Niveau ${levelData.level}`;
+      document.getElementById('xp-text').innerText = `${currentPathXP} / ${levelData.nextLevelXP} XP`;
+      
+      const xpFill = document.getElementById('xp-fill');
+      xpFill.style.width = `${levelData.progressPercent}%`;
+
+      if (flash) {
+        const profileCard = document.getElementById('profile-card');
+        profileCard.classList.remove('pulse-xp');
+        void profileCard.offsetWidth;
+        profileCard.classList.add('pulse-xp');
+
+        xpFill.classList.remove('flash-gold');
+        void xpFill.offsetWidth;
+        xpFill.classList.add('flash-gold');
+      }
+    }
+
+    function showLevelUpModal(levelData) {
+      const modal = document.getElementById('levelup-modal');
+      const subText = document.getElementById('levelup-sub-text');
+      subText.innerText = `Félicitations ! Vous avez atteint le Niveau ${levelData.level} (${levelData.rankTitle}) sur le ${pathsData[currentPath].title}. Votre discipline porte ses fruits !`;
+      modal.classList.add('active');
+      playWindSound();
+    }
+
+    function closeLevelUpModal() {
+      triggerHaptic('light');
+      document.getElementById('levelup-modal').classList.remove('active');
+    }
+
+    function saveNote(storageKeyNotes) {
+      const input = document.getElementById('journal-input');
+      if (!input || !input.value.trim()) return;
+
+      triggerHaptic('medium');
+      const savedNotes = getNotes(storageKeyNotes);
+      const newNote = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        text: input.value.trim()
+      };
+
+      savedNotes.unshift(newNote);
+      saveNotes(storageKeyNotes, savedNotes);
+      input.value = '';
+
+      renderApp();
+    }
+
+    function deleteNote(id, storageKeyNotes) {
+      triggerHaptic('light');
+      let savedNotes = getNotes(storageKeyNotes);
+      savedNotes = savedNotes.filter(n => n.id !== id);
+      saveNotes(storageKeyNotes, savedNotes);
+      renderApp();
+    }
+
+    function toggleArchive() {
+      triggerHaptic('light');
+      isArchiveOpen = !isArchiveOpen;
+      renderApp();
+    }
+
+    function renderArchiveNotes(storageKeyNotes) {
+      const container = document.getElementById('notes-archive');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const savedNotes = getNotes(storageKeyNotes);
+
+      if (savedNotes.length === 0) {
+        container.innerHTML = `<div style="font-size:10px; color:#6b7c77; text-align:center; padding:8px;">Aucune note enregistrée pour le moment.</div>`;
+        return;
+      }
+
+      savedNotes.forEach(note => {
+        const item = document.createElement('div');
+        item.className = 'note-archive-item';
+        item.innerHTML = `
+          <button class="btn-delete-note" onclick="deleteNote(${note.id}, '${storageKeyNotes}')" title="Supprimer">✕</button>
+          <div class="note-date">${note.date}</div>
+          <div class="note-text">${escapeHtml(note.text)}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // INITIALISATION DE L'APPLICATION
+    initSplashScreen();
+    renderApp();
+  </script>
+</body>
+</html>
