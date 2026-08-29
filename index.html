@@ -1117,7 +1117,6 @@
           { name: "MÉDITATION & KATANA", xp: 40 }
         ],
         type: "checklist",
-        storageKey: "sentier_samurai_vertus",
         itemsTitle: "Les 7 Vertus du Bushido à valider",
         items: ["Gi (Justice)", "Rei (Respect)", "Yu (Courage)", "Meiyo (Honneur)", "Jin (Bienveillance)", "Makoto (Sincérité)", "Chu (Loyauté)"]
       },
@@ -1315,21 +1314,13 @@
         mechanicContainer.innerHTML = html;
 
       } else if (data.type === 'checklist') {
-        const savedVertus = getCustomItems(data.storageKey);
-        let currentVertus = savedVertus;
-
-        if (savedVertus.length === 0) {
-          currentVertus = data.items.map(title => ({ name: title, checked: false }));
-          saveCustomItems(data.storageKey, currentVertus);
-        }
-
         let html = `<div class="section-header">${data.itemsTitle}</div><div class="checklist">`;
-        currentVertus.forEach((item, idx) => {
+        data.items.forEach(item => {
           html += `
-            <div class="check-item ${item.checked ? 'checked' : ''}" onclick="toggleCustomItem('${data.storageKey}', ${idx})">
+            <div class="check-item" onclick="toggleCheck(this)">
               <div class="check-left">
                 <div class="check-box">✓</div>
-                <span>${escapeHtml(item.name)}</span>
+                <span>${item}</span>
               </div>
             </div>
           `;
